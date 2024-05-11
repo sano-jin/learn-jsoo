@@ -1,0 +1,4 @@
+(executable
+ (public_name dom_jsoo)
+ (name main)
+ (libraries dom_jsoo))

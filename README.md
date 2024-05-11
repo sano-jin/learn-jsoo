@@ -105,10 +105,9 @@ node _build/default/foo/bar.bc.js
 
 ```bash
 mkdir docs # docs である必要はないが github pages で deploy しやすいため．
-cd docs
 ```
 
-index.html
+docs/index.html
 
 ```html
 <!DOCTYPE html>
@@ -118,14 +117,12 @@ index.html
   </head>
   <body>
     <h1>Trying out HTML DOM manipulation with js_of_ocaml/ocaml.</h1>
-    <div id="container"></div>
     <script src="bar.bc.js"></script>
   </body>
 </html>
 ```
 
 ```bash
-cd ..
 cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied になるので sudo をつける．
 open docs/index.html
 ```
@@ -134,12 +131,35 @@ google chrome の場合は右クリックして inspect を押して，
 Console タブを開く．
 
 ```
-hello from js    +fs_fake.js:333
+hello from js
 ```
 
 こんな感じの表示になっているはず．
 
-## Managing dom
+## Managing dom: retrieving a dom element.
+
+HTML から id を指定して dom 要素を取得して，
+その innerText をコンソールに表示してみよう．
+
+html に id を付与した dom 要素
+`<div id="hello-elem-id">Hello from HTML.</div>`
+を追加した．
+
+docs/index.html
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>This is the title of the webpage!</title>
+  </head>
+  <body>
+    <h1>Trying out HTML DOM manipulation with js_of_ocaml/ocaml.</h1>
+    <div id="hello-elem-id">Hello from HTML.</div>
+    <script src="bar.bc.js"></script>
+  </body>
+</html>
+```
 
 https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html
 
@@ -180,13 +200,102 @@ val getElementById_exn : string -> element Js.t
     It raises if there are no such element *)
 ```
 
-これを使う．
+これを使って dom element を取得した後に，
+innerText を読み出す．
 
 https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/class-type-htmlElement/index.html#method-innerText
 
 ```ocaml
 method innerText : Js_of_ocaml__.Js.js_string Js_of_ocaml__.Js.t
                      Js_of_ocaml__.Js.prop
+```
+
+js_of_ocaml-ppx を用いると，
+
+```ocaml
+elem##.innerText
+```
+
+のように `##.` を使って innerText にアクセスすることができる．
+この詳細は以下に詳しい．
+https://ocsigen.org/js_of_ocaml/latest/manual/ppx
+ちなみに `.pp.ml` ファイルは謎のバイナリファイルと化していて，
+正常な OCaml ソースコードではなかった．
+ちょっと調べたがさっぱり理解できず．
+
+ただし，これによって返されるのは OCaml ではなく，
+JavaScript の文字列であるので，
+OCaml の文字列に変換してやりたいときは
+`Js.to_string` を用いる．
+
+実際の実装はこのようになる．
+
+foo/bar.ml
+
+```ocaml
+open Js_of_ocaml
+
+let () =
+  let elem = Dom_html.getElementById_exn "hello-elem-id" in
+  let str = Js.to_string elem##.innerText in
+  print_endline str
+```
+
+```bash
+dune build
+cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied になるので sudo をつける．
+open docs/index.html
+```
+
+inspect → console を開くと，
+
+```
+Hello from HTML
+```
+
+が表示される．
+
+## Managing dom: adding a dom element.
+
+foo/bar.ml
+に以下を追加する．
+
+```ocaml
+  (* const element = document.createElement("div"); *)
+  let element = Dom_html.createDiv Dom_html.window##.document in
+  element##.innerText := Js.string "Newly added text.";
+  Dom.appendChild Dom_html.document##.body element
+```
+
+open docs/index.html
+すると，
+
+> # Trying out HTML DOM manipulation with js_of_ocaml/ocaml.
+>
+> Hello from HTML.
+>
+> Newly added text.
+
+となる．
+
+## Managing dom: adding a button.
+
+```ocaml
+  let button =
+    Dom_html.createButton ~_type:(Js.string "button") ~name:(Js.string "button")
+      Dom_html.window##.document
+  in
+
+  button##.innerText := Js.string "This is a button.";
+
+  (* クリックイベントハンドラを設定 *)
+  let alert_message _ =
+    Dom_html.window##alert (Js.string "Button was clicked!");
+    Js._false
+  in
+  button##.onclick := Dom_html.handler alert_message;
+
+  Dom.appendChild Dom_html.document##.body button
 ```
 
 ## memo

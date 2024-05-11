@@ -1,27 +1,27 @@
 open Js_of_ocaml
 
 let () =
-  (* let elem = Dom_html.getElementById_exn "container" in *)
-  (* let idstr = Js.to_string elem##.id in *)
-  (* print_endline idstr; *)
-  (* let div = Dom_html.createDiv Dom_html.window##.document in *)
-  (* let jsstr = Js.string "hi from ocaml" in *)
-  (* div##.get jsstr; *)
-  (* let elem = Dom_html.createDiv jsstr in *)
-  (* Dom.appendChild Dom_html.document##.body div; *)
-  (* print_endline "hello from js" *)
-  print_endline "hello from js";
+  let elem = Dom_html.getElementById_exn "hello-elem-id" in
+  let str = Js.to_string elem##.innerText in
+  print_endline str;
 
-  (* let document = Dom_html.document in *)
-  (* match *)
-  (*   Js.Opt.to_option (document##getElementById (Js.string "element-id")) *)
-  (* with *)
-  (* | Some element -> *)
-  (*     let element = Js.Unsafe.coerce element in *)
-  (*     element##.innerText := Js.string "新しいテキスト"; *)
-  (*     Dom.appendChild Dom_html.document##.body element *)
-  (* | None -> () *)
-  let element = Dom_html.createDiv Dom_html.window##.document in
-  let element = Js.Unsafe.coerce element in
+  let doc = Dom_html.window##.document in
+  let element = Dom_html.createDiv doc in
   element##.innerText := Js.string "Newly added text.";
-  Dom.appendChild Dom_html.document##.body element
+  Dom.appendChild Dom_html.document##.body element;
+
+  let button =
+    Dom_html.createButton ~_type:(Js.string "button") ~name:(Js.string "button")
+      Dom_html.window##.document
+  in
+
+  button##.innerText := Js.string "This is a button.";
+
+  (* クリックイベントハンドラを設定 *)
+  let alert_message _ =
+    Dom_html.window##alert (Js.string "Button was clicked!");
+    Js._false
+  in
+  button##.onclick := Dom_html.handler alert_message;
+
+  Dom.appendChild Dom_html.document##.body button

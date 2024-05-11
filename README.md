@@ -114,10 +114,10 @@ docs/index.html
 <html>
   <head>
     <title>This is the title of the webpage!</title>
+    <script src="bar.bc.js"></script>
   </head>
   <body>
     <h1>Trying out HTML DOM manipulation with js_of_ocaml/ocaml.</h1>
-    <script src="bar.bc.js"></script>
   </body>
 </html>
 ```
@@ -152,11 +152,11 @@ docs/index.html
 <html>
   <head>
     <title>This is the title of the webpage!</title>
+    <script src="bar.bc.js"></script>
   </head>
   <body>
     <h1>Trying out HTML DOM manipulation with js_of_ocaml/ocaml.</h1>
     <div id="hello-elem-id">Hello from HTML.</div>
-    <script src="bar.bc.js"></script>
   </body>
 </html>
 ```
@@ -228,6 +228,8 @@ JavaScript の文字列であるので，
 OCaml の文字列に変換してやりたいときは
 `Js.to_string` を用いる．
 
+更に，window.onload イベントに登録してやる．
+
 実際の実装はこのようになる．
 
 foo/bar.ml
@@ -235,10 +237,13 @@ foo/bar.ml
 ```ocaml
 open Js_of_ocaml
 
-let () =
+let onload _ =
   let elem = Dom_html.getElementById_exn "hello-elem-id" in
   let str = Js.to_string elem##.innerText in
-  print_endline str
+  print_endline str;
+  Js._true
+
+let _ = Dom_html.window##.onload := Dom_html.handler onload
 ```
 
 ```bash
@@ -297,6 +302,12 @@ open docs/index.html
 
   Dom.appendChild Dom_html.document##.body button
 ```
+
+## Managing dom: adding a button.
+
+押すと押すと自分自身を削除するボタンを追加するボタンを実装する．
+
+## CSS
 
 ## memo
 

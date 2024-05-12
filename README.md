@@ -4,10 +4,17 @@ Trying out HTML DOM manipulation with js_of_ocaml/ocaml.
 
 ## 概要
 
-js_of_ocaml/ocaml の dom 操作を試してみる．
+JavaScript で型システムがあれば起こり得ないようなバグを大量発生させて四苦八苦していないだろうか？
+
+関数型言語が恋しいあなたに朗報．
+[js_of_ocaml](https://ocsigen.org/js_of_ocaml/latest/manual/overview)
+を使えば OCaml から JavaScript コードを生成してブラウザ上でも使うことができる．
+
+本稿では js_of_ocaml を用いた OCaml コードでの DOM 操作を試してみる．
 
 本稿では OCaml の標準的なビルドシステムである
-dune を用いる．
+[dune](https://dune.build/)
+を用いる．
 js_of_ocaml を使うのに dune は必須ではないが，
 dune がある方が js_of_ocaml を用いる際もそうでない際も便利なため．
 

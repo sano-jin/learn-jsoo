@@ -15,10 +15,12 @@ dune がある方が js_of_ocaml を用いる際もそうでない際も便利�
 
 opam, dune, node が必要．
 
-- [opam](https://opam.ocaml.org/) のインストール．
-  以下を参考に行う．
-  https://opam.ocaml.org/doc/Install.html
-- [dune](https://dune.build/) のインストール．
+- [opam](https://opam.ocaml.org/) のインストールは
+  [公式ページのスクリプト](https://opam.ocaml.org/doc/Install.html)
+  を動かすだけでできる．
+  少し時間はかかる．
+- [dune](https://dune.build/) のインストールは，
+  opam がインストール済みであれば以下のようにして簡単にできる．
   ```bash
   opam install dune
   ```

@@ -18,7 +18,13 @@ JavaScript で型システムがあれば起こり得ないようなバグを大
 js_of_ocaml を使うのに dune は必須ではないが，
 dune がある方が js_of_ocaml を用いる際もそうでない際も便利なため．
 
-## Prerequests
+---
+
+本稿は基本的な OCaml, JavaScript/HTML の知識はあるものと仮定する．
+dune の使用経験はなくとも理解できることを目指す．
+js_of_ocaml の利用経験はないものと仮定する．
+
+## 事前準備
 
 opam, dune, node が必要．
 
@@ -33,12 +39,6 @@ opam, dune, node が必要．
   ```
 - [node](https://nodejs.org/en) は必須ではないが，
   手元で動かしてみるときに使うのでインストールされたし．
-
----
-
-本稿は基本的な OCaml, JavaScript/HTML の知識はあるものと仮定する．
-dune の使用経験はなくとも理解できることを目指す．
-js_of_ocaml の利用経験はないものと仮定する．
 
 ## dune を用いて初期セットアップをする．
 

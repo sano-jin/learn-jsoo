@@ -237,14 +237,16 @@ Console タブを開く．
 hello from js
 ```
 
-## Managing dom: retrieving a dom element.
+## DOM 要素の取得
 
 OCaml から id を指定して HTML の dom 要素を取得して，
 その innerText をコンソールに表示してみよう．
 
+今回以降は
+js_of_ocaml-compiler だけでなく，
 js_of_ocaml と
-js_of_ocaml-ppx も用いるので，
-まずはこれも依存関係に追加してインストールしてやる必要がある．
+js_of_ocaml-ppx も用いる．
+まずはこれも依存関係に追加してやってインストールしてやる必要がある．
 
 dune-project
 
@@ -263,10 +265,10 @@ dune build # update opam file
 opam install .
 ```
 
-これでインストールはできた．
+これで必要なモジュールのインストールはできた．
 
 foo ディレクトリ内で，
-今回は js_of_ocaml モジュールと js_of_ocaml-ppx プリプロセッサを用いるので，
+js_of_ocaml モジュールと js_of_ocaml-ppx プリプロセッサを用いるので，
 foo/dune ファイルも以下のように更新してやる．
 
 foo/dune
@@ -280,13 +282,11 @@ foo/dune
   )
 ```
 
-これで依存するライブラリが使えるようになった．
-
 ---
 
 docs/index.html に id を付与した dom 要素
 `<div id="hello-elem-id">Hello from HTML.</div>`
-を追加した．
+を追加しよう．
 
 docs/index.html
 
@@ -320,11 +320,20 @@ const onload = () => {
 window.onload = onload;
 ```
 
-js_of_ocaml の DOM 操作のドキュメントは以下にある．
-https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html
-これを解読しながら実装を進めていくことになる．
+js_of_ocaml のドキュメントは
+[ここ](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/index.html)
+にある．
+恐らくは現時点では新しくて網羅的な情報が他にあるわけではないので，
+結局最終的にはこれを解読しながら実装を進めていくことになる．
 
-https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-getElementById_exn
+js_of_ocaml で DOM 操作のための関数などを提供しているのは
+[Dom_html](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html)
+である．
+この中に getElementById や innerText などに該当する関数やメソッドがないか調べてみよう．
+
+getElementById に該当する関数は
+[ここ](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-getElementById_exn)
+にある．
 
 ```ocaml
 val getElementById_exn : string -> element Js.t
@@ -335,33 +344,44 @@ val getElementById_exn : string -> element Js.t
 これを使って dom element を取得した後に，
 innerText を読み出す．
 
-https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/class-type-htmlElement/index.html#method-innerText
+innerText に該当するメソッドは
+[ここ](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/class-type-htmlElement/index.html#method-innerText)
+にある．
 
 ```ocaml
 method innerText : Js_of_ocaml__.Js.js_string Js_of_ocaml__.Js.t
                      Js_of_ocaml__.Js.prop
 ```
 
+ここで，
 js_of_ocaml-ppx を用いると，
+以下のように `##.` を使って innerText にアクセスすることができる．
 
 ```ocaml
 element##.innerText
 ```
 
-のように `##.` を使って innerText にアクセスすることができる．
-この詳細は以下に詳しい．
-https://ocsigen.org/js_of_ocaml/latest/manual/ppx
-ちなみに `.pp.ml` ファイルは謎のバイナリファイルと化していて，
+この辺りについては一応公式的には
+[ここ](https://ocsigen.org/js_of_ocaml/latest/manual/ppx)
+で説明されている．
+
+ちなみに生成された `.pp.ml` ファイルは謎のバイナリファイルと化していて，
 正常な OCaml ソースコードではなかった．
 ちょっと調べたがさっぱり理解できず．
 
-ただし，これによって返されるのは OCaml ではなく，
-JavaScript の文字列であるので，
+ただし，この innerText によって返されるのは，
+OCaml ではなく JavaScript の文字列であるので，
 OCaml の文字列に変換してやりたいときは
-`Js.to_string: js_string t -> string` を用いる．
+[Js.to_string](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Js/index.html#val-to_string)
+を用いる．
+
+```ocaml
+Js.to_string: js_string t -> string
+```
 
 ここで，js_of_ocaml/ocaml に関係なく，
-DOM 要素の取得は，ブラウザ上で DOM ツリーの構築が完了してから出ないとできない．
+DOM 要素の取得は，ブラウザ上で DOM ツリーの構築が完了してからでないとできない．
+
 従って，DOM 要素を取得するような処理は，
 例えば
 [window.onload](https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event)
@@ -424,12 +444,12 @@ Hello from HTML
 
 が表示される．
 
-## Managing dom: adding a dom element.
+## DOM 要素の追加
 
 前回は DOM 要素の取得ができたので，
 今回は DOM 要素の追加をしてみる．
 
-JavaScript だと以下のようなコードになる．
+今回実装するコードは JavaScript で書くなら以下のようなコードになる．
 
 ```javascript
 const onload = () => {
@@ -444,11 +464,11 @@ window.onload = onload;
 ---
 
 js_of_ocaml では DOM 要素の生成のための補助関数がいくつか定義されている．
-https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#helper-functions-for-creating-html-elements
+[ここ](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#helper-functions-for-creating-html-elements)
+で一覧を見てみよう．
 
 例えば div 要素を作るのには
-`createDiv : document Js.t -> divElement Js.t` を用いれば良い．
-https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-createDiv
+[`createDiv : document Js.t -> divElement Js.t`](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-createDiv) を用いれば良い．
 
 `createDiv` の第一引数は document であるので，
 新たな div 要素 `element` を生成するコードは以下のようになる．

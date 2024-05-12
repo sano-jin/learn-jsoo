@@ -525,7 +525,7 @@ sudo cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied
 open docs/index.html
 ```
 
-すると，以下のように新たな div 要素が追加されているはずである．
+以下のように新たな div 要素が追加されているはずである．
 
 > # Trying out HTML DOM manipulation with js_of_ocaml/ocaml.
 >
@@ -599,7 +599,7 @@ sudo cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied
 open docs/index.html
 ```
 
-すると，クリックすると "Button was clicked!" というアラートが表示されるボタンが追加されているはずである．
+ボタンをクリックすると "Button was clicked!" というアラートが表示されるボタンが追加されているはずである．
 
 ## DOM 要素の動的な追加と削除
 

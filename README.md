@@ -37,7 +37,7 @@ opam, dune, node が必要．
   ```bash
   opam install dune
   ```
-- [node](https://nodejs.org/en) は必須ではないが，
+- [node](https://nodejs.org/en) は js_of_ocaml を使うのに必須ではないが，
   手元で動かしてみるときに使うのでインストールされたし．
 
 ## dune を用いて初期セットアップをする．

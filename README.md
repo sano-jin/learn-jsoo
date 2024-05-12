@@ -6,24 +6,91 @@ Trying out HTML DOM manipulation with js_of_ocaml/ocaml.
 
 js_of_ocaml/ocaml の dom 操作を試してみる．
 
+本稿では OCaml の標準的なビルドシステムである
+dune を用いる．
+js_of_ocaml を使うのに dune は必須ではないが，
+dune がある方が js_of_ocaml を用いる際もそうでない際も便利なため．
+
 # Memo
 
-## Initial setup
+## Prerequests
+
+opam, dune, node が必要．
+
+[opam](https://opam.ocaml.org/) のインストール．
+以下を参考に行う．
+https://opam.ocaml.org/doc/Install.html
+
+[dune](https://dune.build/) のインストール．
+
+```bash
+opam install dune
+```
+
+[node](https://nodejs.org/en) は必須ではないが，
+手元で動かしてみるときに使うのでインストールされたし．
+
+---
+
+本稿は基本的な OCaml, JavaScript/HTML の知識はあるものと仮定する．
+dune の使用経験はなくとも理解できることを目指す．
+js_of_ocaml の利用経験はないものと仮定する．
+
+## dune を用いて初期セットアップをする．
+
+dune を用いて初期セットアップをする．
 
 ```bash
 dune init project dom_jsoo .
 ```
+
+以下のようなディレクトリ構成になる．
+
+```
+tree
+.
+├── _build
+│   └── log
+├── bin
+│   ├── dune
+│   └── main.ml
+├── dom_jsoo.opam
+├── dune-project
+├── lib
+│   └── dune
+└── test
+    ├── dune
+    └── test_dom_jsoo.ml
+```
+
+bin/main.ml
+を見てみると，以下のようなコードになっているので，
+実行すると `Hello, World!` が標準出力されるはずである．
+
+```ocaml
+let () = print_endline "Hello, World!"
+```
+
+dune は，
+`dune build` でビルドができる．
+また，`dune exec <project name>` でビルドが未完了だった場合はビルドをしてから実行することができる．
 
 ```bash
 dune exec dom_jsoo
 # Hello, World!
 ```
 
-## Adding js_of_ocaml
+実行すると `Hello, World!` が標準出力された．
 
+## js_of_ocaml を追加する
+
+js_of_ocaml を追加してみよう．
+
+dune に js_of_ocaml を追加する方法について，
+dune の公式ドキュメントには以下に簡単にまとめられている．
 https://dune.readthedocs.io/en/stable/jsoo.html
 
-dune-project の depends に js_of_ocaml-compiler を足す．
+まず dune-project の depends に js_of_ocaml-compiler を足す．
 
 ```diff
 < (depends ocaml dune)
@@ -76,32 +143,49 @@ Do you want to continue? [Y/n] Y
 Done.
 ```
 
-javascript に変換してみる．
+---
 
-bin directory のものを利用しても良いけど，
+次に js_of_ocaml を用いて OCaml コードを javascript に変換してみる．
+
+`bin` ディレクトリをそのまま利用しても良いけど，
 今回は別のものを作ることにする．
+
+foo ディレクトリを新たに作って，foo/bar.ml, foo/dune を配置する．
 
 ```bash
 mkdir foo
-cd foo
+```
 
-vim bar.ml # edit
-cat bar.ml
-# let () = print_endline "hello from js"
+foo/bar.ml
 
-vim dune # edit
-cat dune
-# (executable
-#   (name bar)
-#   (modes js)
-#   )
+```ocaml
+let () = print_endline "hello from js"
+```
 
+foo/dune
+
+```lisp
+(executable
+  (name bar)
+  (modes js)
+  )
+```
+
+ビルドすると，
+`_build/default/foo/` ディレクトリに
+`bar.bc.js` という JavaScript コードが生成されているはずである．
+これを node で実行すると `hello from js` が標準出力される．
+
+```bash
 dune build
 node _build/default/foo/bar.bc.js
 # hello from js
 ```
 
-## Adding HTML
+## HTML ファイルから呼び出してみる．
+
+先の OCaml からコンパイルされた JavaScript コードを HTML ファイルから呼び出してみる．
+docs ディレクトリを生成して docs/index.html ファイルを配置する．
 
 ```bash
 mkdir docs # docs である必要はないが github pages で deploy しやすいため．
@@ -122,11 +206,19 @@ docs/index.html
 </html>
 ```
 
+docs ディレクトリに bar.bc.js ファイルを配置する．
+
 ```bash
 cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied になるので sudo をつける．
+```
+
+docs/index.html をブラウザで開くとコンソール出力されているはずである．
+
+```
 open docs/index.html
 ```
 
+docs/index.html をブラウザで開いてから，
 google chrome の場合は右クリックして inspect を押して，
 Console タブを開く．
 
@@ -138,10 +230,51 @@ hello from js
 
 ## Managing dom: retrieving a dom element.
 
-HTML から id を指定して dom 要素を取得して，
+OCaml から id を指定して HTML の dom 要素を取得して，
 その innerText をコンソールに表示してみよう．
 
-html に id を付与した dom 要素
+js_of_ocaml-ppx も用いるので，
+まずはこれも依存関係に追加してインストールしてやる必要がある．
+
+dune-project
+
+```
+ (depends
+   ocaml
+   dune
+   js_of_ocaml-compiler
+   js_of_ocaml # newly added
+   js_of_ocaml-ppx # newly added
+   )
+```
+
+```bash
+dune build # update opam file
+opam install .
+```
+
+これでインストールはできた．
+
+foo ディレクトリ内で，
+今回は js_of_ocaml モジュールと js_of_ocaml-ppx プリプロセッサを用いるので，
+foo/dune ファイルも以下のように更新してやる．
+
+foo/dune
+
+```lisp
+(executable
+  (name bar)
+  (modes js)
+  (preprocess (pps js_of_ocaml-ppx)) ;; added
+  (libraries js_of_ocaml) ;; added
+  )
+```
+
+これで依存するライブラリが使えるようになった．
+
+---
+
+docs/index.html に id を付与した dom 要素
 `<div id="hello-elem-id">Hello from HTML.</div>`
 を追加した．
 
@@ -161,36 +294,24 @@ docs/index.html
 </html>
 ```
 
+---
+
+今回 OCaml で書きたいコードは，
+JavaScript で書くなら以下のようになる．
+
+```javascript
+const onload = () =>
+  const element = document.getElementById("hello-elem-id");
+  const str = element.innerText;
+  console.log(str);
+  return true;
+
+window.onload = onload;
+```
+
+js_of_ocaml の DOM 操作のドキュメントは以下にある．
 https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html
-
-install js_of_ocaml and js_of_ocaml-ppx.
-
-dune-project
-
-```
- (depends
-   ocaml
-   dune
-   js_of_ocaml-compiler
-   js_of_ocaml # newly added
-   js_of_ocaml-ppx # newly added
-   )
-```
-
-```bash
-dune build # update opam file
-opam install .
-```
-
-foo/dune
-
-```lisp
-(executable
-  (name bar)
-  (modes js)
-  (libraries js_of_ocaml) ;; added
-  )
-```
+これを解読しながら実装を進めていくことになる．
 
 https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-getElementById_exn
 
@@ -213,7 +334,7 @@ method innerText : Js_of_ocaml__.Js.js_string Js_of_ocaml__.Js.t
 js_of_ocaml-ppx を用いると，
 
 ```ocaml
-elem##.innerText
+element##.innerText
 ```
 
 のように `##.` を使って innerText にアクセスすることができる．
@@ -226,11 +347,30 @@ https://ocsigen.org/js_of_ocaml/latest/manual/ppx
 ただし，これによって返されるのは OCaml ではなく，
 JavaScript の文字列であるので，
 OCaml の文字列に変換してやりたいときは
-`Js.to_string` を用いる．
+`Js.to_string: js_string t -> string` を用いる．
 
-更に，window.onload イベントに登録してやる．
+ここで，js_of_ocaml/ocaml に関係なく，
+DOM 要素の取得は，ブラウザ上で DOM ツリーの構築が完了してから出ないとできない．
+従って，DOM 要素を取得するような処理は，
+例えば
+[window.onload](https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event)
+イベントリスナーに登録するなどして，
+DOM 構築が完了してから行われるようにしてやる必要がある．
 
-実際の実装はこのようになる．
+window.onload イベントリスナーに登録するのには以下のようにしてやれば良い．
+
+```ocaml
+let onload _ =
+  (* some side effects. *)
+  Js._true
+
+let _ =
+  Dom_html.window##.onload := Dom_html.handler onload
+```
+
+---
+
+最後に実際の実装はこのようになる．
 
 foo/bar.ml
 
@@ -238,21 +378,26 @@ foo/bar.ml
 open Js_of_ocaml
 
 let onload _ =
-  let elem = Dom_html.getElementById_exn "hello-elem-id" in
-  let str = Js.to_string elem##.innerText in
+  let element = Dom_html.getElementById_exn "hello-elem-id" in
+  let str = Js.to_string element##.innerText in
   print_endline str;
   Js._true
 
 let _ = Dom_html.window##.onload := Dom_html.handler onload
 ```
 
+実装が完了したら，
+ビルドして，
+生成された JavaScript コードを HTML ファイルが呼び出せるように配置して，
+ブラウザから見てみよう．
+
 ```bash
 dune build
-cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied になるので sudo をつける．
+sudo cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied になるので sudo をつける．
 open docs/index.html
 ```
 
-inspect → console を開くと，
+Console を開くと，
 
 ```
 Hello from HTML
@@ -266,10 +411,13 @@ foo/bar.ml
 に以下を追加する．
 
 ```ocaml
+open Js_of_ocaml
+
+let onload _ =
   (* const element = document.createElement("div"); *)
-  let element = Dom_html.createDiv Dom_html.window##.document in
+  let document = Dom_html.window##.document in
+  let element = Dom_html.createDiv document in
   element##.innerText := Js.string "Newly added text.";
-  Dom.appendChild Dom_html.document##.body element
 ```
 
 open docs/index.html

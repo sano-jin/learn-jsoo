@@ -5,8 +5,8 @@ let onload _ =
   let str = Js.to_string elem##.innerText in
   print_endline str;
 
-  let doc = Dom_html.window##.document in
-  let element = Dom_html.createDiv doc in
+  let document = Dom_html.window##.document in
+  let element = Dom_html.createDiv document in
   element##.innerText := Js.string "Newly added text.";
   Dom.appendChild Dom_html.document##.body element;
 

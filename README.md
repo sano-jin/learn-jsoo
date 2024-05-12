@@ -64,12 +64,13 @@ tree
 ```
 
 bin/main.ml
-を見てみると，以下のようなコードになっているので，
-実行すると `Hello, World!` が標準出力されるはずである．
+を見てみると，以下のようなコードになっている．
 
 ```ocaml
 let () = print_endline "Hello, World!"
 ```
+
+従って，このプロジェクトをビルドして実行すると `Hello, World!` が標準出力されるはずである．
 
 dune は，
 `dune build` でビルドができる．
@@ -87,8 +88,9 @@ dune exec dom_jsoo
 js_of_ocaml を追加してみよう．
 
 dune に js_of_ocaml を追加する方法について，
-dune の公式ドキュメントには以下に簡単にまとめられている．
-https://dune.readthedocs.io/en/stable/jsoo.html
+dune の公式ドキュメントでは
+[JavaScript Compilation With Js_of_ocaml](https://dune.readthedocs.io/en/stable/jsoo.html)
+に簡単にまとめられている．
 
 まず dune-project の depends に js_of_ocaml-compiler を足す．
 
@@ -100,11 +102,16 @@ https://dune.readthedocs.io/en/stable/jsoo.html
    )
 ```
 
+dune を用いてビルドすると，
+これらの新たな依存関係が dom_jsoo.opam ファイルに反映される．
+
 ```bash
 dune build
 ```
 
-をすると，opam ファイルに反映されるはず．
+dom_jsoo.opam ファイルにおいて依存関係は以下のようになっているはずである．
+
+dom_jsoo.opam
 
 ```opam
 depends: [
@@ -115,11 +122,13 @@ depends: [
 ]
 ```
 
+opam を用いてこの新たな依存関係を満たそう．
+
 ```bash
 opam install .
 ```
 
-をすると js_of_ocaml-compiler が install される．
+以下のように js_of_ocaml-compiler がインストールされるはずである．
 
 ```
 [dom_jsoo.~dev] synchronised (no changes)
@@ -146,7 +155,7 @@ Done.
 次に js_of_ocaml を用いて OCaml コードを javascript に変換してみる．
 
 `bin` ディレクトリをそのまま利用しても良いけど，
-今回は別のものを作ることにする．
+今回は別のディレクトリやコードを作ることにする．
 
 foo ディレクトリを新たに作って，foo/bar.ml, foo/dune を配置する．
 
@@ -169,7 +178,9 @@ foo/dune
   )
 ```
 
-ビルドすると，
+---
+
+dune でビルドすると，
 `_build/default/foo/` ディレクトリに
 `bar.bc.js` という JavaScript コードが生成されているはずである．
 これを node で実行すると `hello from js` が標準出力される．
@@ -182,7 +193,7 @@ node _build/default/foo/bar.bc.js
 
 ## HTML ファイルから呼び出してみる．
 
-先の OCaml からコンパイルされた JavaScript コードを HTML ファイルから呼び出してみる．
+先の OCaml からコンパイルされた JavaScript コードを HTML ファイルから呼び出してみよう．
 docs ディレクトリを生成して docs/index.html ファイルを配置する．
 
 ```bash
@@ -220,17 +231,18 @@ docs/index.html をブラウザで開いてから，
 google chrome の場合は右クリックして inspect を押して，
 Console タブを開く．
 
+以下の出力が得られているはず．
+
 ```
 hello from js
 ```
-
-こんな感じの表示になっているはず．
 
 ## Managing dom: retrieving a dom element.
 
 OCaml から id を指定して HTML の dom 要素を取得して，
 その innerText をコンソールに表示してみよう．
 
+js_of_ocaml と
 js_of_ocaml-ppx も用いるので，
 まずはこれも依存関係に追加してインストールしてやる必要がある．
 

@@ -51,7 +51,6 @@ dune init project dom_jsoo .
 以下のようなディレクトリ構成になる．
 
 ```
-tree
 .
 ├── _build
 │   └── log
@@ -688,6 +687,8 @@ open docs/index.html
 
 "add a button" と書かれたボタンをクリックするとボタンがどんどん動的に追加されていくはずである．
 動的に追加されたボタンをクリックすると，そのボタンは削除されるはずである．
+
+![Demo image.](dynamic-buttons.gif)
 
 ## まとめ
 

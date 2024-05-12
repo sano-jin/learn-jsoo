@@ -258,8 +258,8 @@ dune-project
    ocaml
    dune
    js_of_ocaml-compiler
-   js_of_ocaml # newly added
-   js_of_ocaml-ppx # newly added
+   js_of_ocaml ;; newly added
+   js_of_ocaml-ppx ;; newly added
    )
 ```
 

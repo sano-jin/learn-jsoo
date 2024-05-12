@@ -11,8 +11,6 @@ dune を用いる．
 js_of_ocaml を使うのに dune は必須ではないが，
 dune がある方が js_of_ocaml を用いる際もそうでない際も便利なため．
 
-# Memo
-
 ## Prerequests
 
 opam, dune, node が必要．
@@ -468,7 +466,11 @@ js_of_ocaml では DOM 要素の生成のための補助関数がいくつか定
 で一覧を見てみよう．
 
 例えば div 要素を作るのには
-[`createDiv : document Js.t -> divElement Js.t`](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-createDiv) を用いれば良い．
+[createDiv](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-createDiv) を用いれば良い．
+
+```ocaml
+createDiv : document Js.t -> divElement Js.t
+```
 
 `createDiv` の第一引数は document であるので，
 新たな div 要素 `element` を生成するコードは以下のようになる．
@@ -480,12 +482,13 @@ let element = Dom_html.createDiv document in
 
 innerText への代入は js_of_ocaml-ppx を用いると，
 以下のように `##.` と `:=` を用いて実装できる．
-ここで OCaml の文字列をそのまま代入するのではなく，
-`Js.string` を用いて JavaScript の文字列に変換してから代入していることに注意．
 
 ```ocaml
 element##.innerText := Js.string "Newly added div element.";
 ```
+
+ここで OCaml の文字列をそのまま代入するのではなく，
+`Js.string` を用いて OCaml の文字列を JavaScript の文字列に変換してから代入していることに注意．
 
 ---
 
@@ -524,9 +527,7 @@ open docs/index.html
 >
 > Newly added div element.
 
-となる．
-
-## Managing dom: adding a button.
+## クリックイベントに反応するボタンの追加
 
 もう少し複雑な例としてボタンの追加をしてみる．
 ボタンの click イベントリスナーにアラートを出す関数 `alert_message` を紐づけてやる．
@@ -534,17 +535,11 @@ open docs/index.html
 window の onload に関数を紐づけたように，
 `button##.onclick := Html.handler alert_message;`
 としてやっても良いが，
-せっかくなので addEventListener を使ってみる．
-https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+せっかくなので今度は
+[addEventListener](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener)
+を使ってみよう．
 
-`Dom_html.addEventListener`
-は
-`Dom_html.event_listener_id`
-を返すが，今回これは使わないので，
-`ignore` してやる．
-
-あと，毎回 `Js.string` と打つのも面倒なので，`let s = Js.string in` としてやっている．
-
+そこまで複雑なものでもないので，先にコード全体を見せてしまう．
 最終的なコードは以下のようになる．
 
 foo/bar.ml
@@ -580,10 +575,29 @@ let onload _ =
 let _ = Html.window##.onload := Html.handler onload
 ```
 
-## Managing dom: adding a button.
+`Dom_html.addEventListener`
+は
+`Dom_html.event_listener_id`
+を返すが，今回これは使わないので，
+`ignore` してやる．
 
-もう少し複雑な例として，
-押すと押すと自分自身を削除するボタンを追加するボタンを実装する．
+あと，毎回 `Js.string` と打つのも面倒なので，`let s = Js.string in` としてやっている．
+
+---
+
+今までと同様にビルドして JavaScript コードを適切に配置した後にブラウザで開いてやる．
+
+```bash
+dune build
+sudo cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied になるので sudo をつける．
+open docs/index.html
+```
+
+すると，クリックすると "Button was clicked!" というアラートが表示されるボタンが追加されているはずである．
+
+## DOM 要素の動的な追加と削除
+
+最後に「押すと「押すと自分自身を削除するボタン」を追加するボタン」を実装してみよう．
 
 先にコードを全部見せてしまおう．
 
@@ -643,31 +657,48 @@ let _ = Html.window##.onload := Html.handler onload
 単に括弧を書くのが面倒なので使っている．
 
 [Js.Opt.map: 'a t -> ('a -> 'b) -> 'b t](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Js/Opt/index.html#val-map)
-関数が `opt` に対して map する関数である．
+は `opt` 型を持つ値に対して関数を map する関数である．
 
 `ignore @@ Js.Opt.map event##.target @@ Dom.removeChild parent`
 をより分かりやすく書き直すと，以下のようになる．
 
 ```ocaml
+let target_opt = event##.target in
 let helper target =
   Dom.removeChild parent target
 in
-let target_opt = event##.target in
 ignore (Js.Opt.map target_opt helper)
 ```
 
-## CSS
+---
 
-## memo
-
-linting opam file.
+今までと同様にビルドして JavaScript コードを適切に配置した後にブラウザで開いてやる．
 
 ```bash
-opam lint *.opam
+dune build
+sudo cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied になるので sudo をつける．
+open docs/index.html
 ```
 
-An Introduction to js_of_ocaml
+"add a button" と書かれたボタンをクリックするとボタンがどんどん動的に追加されていくはずである．
+動的に追加されたボタンをクリックすると，そのボタンは削除されるはずである．
 
-- https://hackmd.io/@Swerve/HyhrqnFeF
+## まとめ
 
-https://github.com/camlspotter/ocaml-zippy-tutorial-in-japanese/blob/master/js_of_ocaml.rst
+かなり良くできたフレームワークだと思うが，
+如何せん最新かつ網羅的なわかりやすい情報がなかなか見つからないというのが難点だと思う．
+
+本稿はわかりやすく書いたつもりだが，
+分かりにくかったり間違った点があったら教えてください（沢山ありそう）．
+
+[Ocigen](https://github.com/ocsigen) には他にも面白そうなものが沢山あるように見える．
+他のものも時間を見つけて試してみたい．
+
+## 参考文献
+
+- [Ocigen: Js_of_ocaml](https://ocsigen.org/js_of_ocaml/latest/manual/overview)
+- [Module Js_of_ocaml](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/index.html)
+- [GitHub: Js_of_ocaml (jsoo)](https://github.com/ocsigen/js_of_ocaml)
+- [JavaScript Compilation With Js_of_ocaml](https://dune.readthedocs.io/en/stable/jsoo.html)
+- [An Introduction to js_of_ocaml](https://hackmd.io/@Swerve/HyhrqnFeF)
+- [ウェブブラウザで関数型言語を使う: js_of_ocaml](https://github.com/camlspotter/ocaml-zippy-tutorial-in-japanese/blob/master/js_of_ocaml.rst)

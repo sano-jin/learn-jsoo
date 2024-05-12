@@ -471,10 +471,10 @@ js_of_ocaml では DOM 要素の生成のための補助関数がいくつか定
 で一覧を見てみよう．
 
 例えば div 要素を作るのには
-[createDiv](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-createDiv) を用いれば良い．
+[Dom_html.createDiv](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-createDiv) を用いれば良い．
 
 ```ocaml
-createDiv : document Js.t -> divElement Js.t
+Dom_html.createDiv : document Js.t -> divElement Js.t
 ```
 
 `createDiv` の第一引数は document であるので，

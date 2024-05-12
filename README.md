@@ -136,7 +136,7 @@ The following actions will be performed:
 Do you want to continue? [Y/n] Y
 
 <><> Processing actions <><><><><><><><><><><><><><><><><><><><><><><><><><><><>
--> retrieved dom_jsoo.~dev  (file:///Users/sano/work/dev/learn-jsoo/dom_jsoo)
+-> retrieved dom_jsoo.~dev  (file:...)
 -> retrieved js_of_ocaml-compiler.5.7.2  (cached)
 -> installed js_of_ocaml-compiler.5.7.2
 -> installed dom_jsoo.~dev

@@ -1,31 +1,34 @@
 open Js_of_ocaml
+module Html = Dom_html
 
 let onload _ =
-  let elem = Dom_html.getElementById_exn "hello-elem-id" in
-  let str = Js.to_string elem##.innerText in
-  print_endline str;
-
-  let document = Dom_html.window##.document in
-  let element = Dom_html.createDiv document in
-  element##.innerText := Js.string "Newly added text.";
-  Dom.appendChild Dom_html.document##.body element;
-
-  let button =
-    Dom_html.createButton ~_type:(Js.string "button") ~name:(Js.string "button")
-      Dom_html.window##.document
+  let s = Js.string in
+  let document = Html.window##.document in
+  let parent = Html.document##.body in
+  let append_button text onclick =
+    let button =
+      Html.createButton ~_type:(s "button") ~name:(s "button") document
+    in
+    button##.innerText := s text;
+    button##.onclick := Html.handler onclick;
+    Dom.appendChild parent button
   in
 
-  button##.innerText := Js.string "This is a button.";
-
-  (* クリックイベントハンドラを設定 *)
-  let alert_message _ =
-    Dom_html.window##alert (Js.string "Button was clicked!");
+  let delete_itself event =
+    ignore @@ Js.Opt.map event##.target @@ Dom.removeChild parent;
     Js._false
   in
-  button##.onclick := Dom_html.handler alert_message;
 
-  Dom.appendChild Dom_html.document##.body button;
+  let counter = ref 0 in
+  let add_button _ =
+    incr counter;
+    let i = !counter in
+    let text = "button " ^ string_of_int i in
+    append_button text delete_itself;
+    Js._false
+  in
 
+  append_button "add a button." add_button;
   Js._true
 
-let _ = Dom_html.window##.onload := Dom_html.handler onload
+let _ = Html.window##.onload := Html.handler onload

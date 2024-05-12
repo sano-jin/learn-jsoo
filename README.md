@@ -92,14 +92,12 @@ https://dune.readthedocs.io/en/stable/jsoo.html
 
 まず dune-project の depends に js_of_ocaml-compiler を足す．
 
-```diff
-< (depends ocaml dune)
----
-> (depends
->   ocaml
->   dune
->   js_of_ocaml-compiler
->   )
+```lisp
+ (depends
+   ocaml
+   dune
+   js_of_ocaml-compiler
+   )
 ```
 
 ```bash
@@ -214,7 +212,7 @@ cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied に�
 
 docs/index.html をブラウザで開くとコンソール出力されているはずである．
 
-```
+```bash
 open docs/index.html
 ```
 
@@ -238,7 +236,7 @@ js_of_ocaml-ppx も用いるので，
 
 dune-project
 
-```
+```lisp
  (depends
    ocaml
    dune
@@ -300,11 +298,12 @@ docs/index.html
 JavaScript で書くなら以下のようになる．
 
 ```javascript
-const onload = () =>
+const onload = () => {
   const element = document.getElementById("hello-elem-id");
   const str = element.innerText;
   console.log(str);
   return true;
+};
 
 window.onload = onload;
 ```
@@ -368,6 +367,13 @@ let _ =
   Dom_html.window##.onload := Dom_html.handler onload
 ```
 
+毎回 `Dom_html` と書くのは少し煩わしいので，
+以下のようにしてやって `Html` とだけ書けば良いようにしてやる．
+
+```ocaml
+module Html = Dom_html
+```
+
 ---
 
 最後に実際の実装はこのようになる．
@@ -376,14 +382,15 @@ foo/bar.ml
 
 ```ocaml
 open Js_of_ocaml
+module Html = Dom_html
 
 let onload _ =
-  let element = Dom_html.getElementById_exn "hello-elem-id" in
+  let element = Html.getElementById_exn "hello-elem-id" in
   let str = Js.to_string element##.innerText in
   print_endline str;
   Js._true
 
-let _ = Dom_html.window##.onload := Dom_html.handler onload
+let _ = Html.window##.onload := Html.handler onload
 ```
 
 実装が完了したら，
@@ -407,53 +414,215 @@ Hello from HTML
 
 ## Managing dom: adding a dom element.
 
+前回は DOM 要素の取得ができたので，
+今回は DOM 要素の追加をしてみる．
+
+JavaScript だと以下のようなコードになる．
+
+```javascript
+const onload = () => {
+  const element = document.createElement("div");
+  element.innerText = "Newly added div element.";
+  return true;
+};
+
+window.onload = onload;
+```
+
+---
+
+js_of_ocaml では DOM 要素の生成のための補助関数がいくつか定義されている．
+https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#helper-functions-for-creating-html-elements
+
+例えば div 要素を作るのには
+`createDiv : document Js.t -> divElement Js.t` を用いれば良い．
+https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Dom_html/index.html#val-createDiv
+
+`createDiv` の第一引数は document であるので，
+新たな div 要素 `element` を生成するコードは以下のようになる．
+
+```ocaml
+let document = Dom_html.window##.document in
+let element = Dom_html.createDiv document in
+```
+
+innerText への代入は js_of_ocaml-ppx を用いると，
+以下のように `##.` と `:=` を用いて実装できる．
+ここで OCaml の文字列をそのまま代入するのではなく，
+`Js.string` を用いて JavaScript の文字列に変換してから代入していることに注意．
+
+```ocaml
+element##.innerText := Js.string "Newly added div element.";
+```
+
+---
+
+最終的な実装は以下のようになる．
+
 foo/bar.ml
-に以下を追加する．
 
 ```ocaml
 open Js_of_ocaml
+module Html = Dom_html
 
 let onload _ =
-  (* const element = document.createElement("div"); *)
-  let document = Dom_html.window##.document in
-  let element = Dom_html.createDiv document in
-  element##.innerText := Js.string "Newly added text.";
+  let document = Html.window##.document in
+  let element = Html.createDiv document in
+  element##.innerText := Js.string "Newly added div element.";
+  Js._true
+
+let _ = Html.window##.onload := Html.handler onload
 ```
 
+---
+
+今までと同様にビルドして JavaScript コードを適切に配置した後にブラウザで開いてやる．
+
+```bash
+dune build
+sudo cp _build/default/foo/bar.bc.js docs # 二回目からは permission denied になるので sudo をつける．
 open docs/index.html
-すると，
+```
+
+すると，以下のように新たな div 要素が追加されているはずである．
 
 > # Trying out HTML DOM manipulation with js_of_ocaml/ocaml.
 >
 > Hello from HTML.
 >
-> Newly added text.
+> Newly added div element.
 
 となる．
 
 ## Managing dom: adding a button.
 
+もう少し複雑な例としてボタンの追加をしてみる．
+ボタンの click イベントリスナーにアラートを出す関数 `alert_message` を紐づけてやる．
+
+window の onload に関数を紐づけたように，
+`button##.onclick := Html.handler alert_message;`
+としてやっても良いが，
+せっかくなので addEventListener を使ってみる．
+https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+
+`Dom_html.addEventListener`
+は
+`Dom_html.event_listener_id`
+を返すが，今回これは使わないので，
+`ignore` してやる．
+
+あと，毎回 `Js.string` と打つのも面倒なので，`let s = Js.string in` としてやっている．
+
+最終的なコードは以下のようになる．
+
+foo/bar.ml
+
 ```ocaml
+open Js_of_ocaml
+module Html = Dom_html
+
+let onload _ =
+  let s = Js.string in
+  let document = Html.window##.document in
   let button =
-    Dom_html.createButton ~_type:(Js.string "button") ~name:(Js.string "button")
-      Dom_html.window##.document
+    Html.createButton ~_type:(s "button") ~name:(s "button") document
   in
 
-  button##.innerText := Js.string "This is a button.";
+  button##.innerText := s "This is a button.";
 
   (* クリックイベントハンドラを設定 *)
   let alert_message _ =
-    Dom_html.window##alert (Js.string "Button was clicked!");
+    Html.window##alert (s "Button was clicked!");
     Js._false
   in
-  button##.onclick := Dom_html.handler alert_message;
+  (* button##.onclick := Html.handler alert_message; *)
+  ignore
+    (Html.addEventListener button Html.Event.click
+       (Html.handler alert_message)
+       Js._false);
 
-  Dom.appendChild Dom_html.document##.body button
+  Dom.appendChild Html.document##.body button;
+
+  Js._true
+
+let _ = Html.window##.onload := Html.handler onload
 ```
 
 ## Managing dom: adding a button.
 
+もう少し複雑な例として，
 押すと押すと自分自身を削除するボタンを追加するボタンを実装する．
+
+先にコードを全部見せてしまおう．
+
+foo/bar.ml
+
+```ocaml
+open Js_of_ocaml
+module Html = Dom_html
+
+let onload _ =
+  let s = Js.string in
+  let document = Html.window##.document in
+  let parent = Html.document##.body in
+  let append_button text onclick =
+    let button =
+      Html.createButton ~_type:(s "button") ~name:(s "button") document
+    in
+    button##.innerText := s text;
+    button##.onclick := Html.handler onclick;
+    Dom.appendChild parent button
+  in
+
+  let delete_itself event =
+    ignore @@ Js.Opt.map event##.target @@ Dom.removeChild parent;
+    Js._false
+  in
+
+  let counter = ref 0 in
+  let add_button _ =
+    incr counter;
+    let i = !counter in
+    let text = "button " ^ string_of_int i in
+    append_button text delete_itself;
+    Js._false
+  in
+
+  append_button "add a button." add_button;
+  Js._true
+
+let _ = Html.window##.onload := Html.handler onload
+```
+
+`delete_itself` は自分自身を削除する関数なのだが，
+少し分かりづらいと思うので補足説明する．
+
+まず `@@` は単に優先度が低い関数適用の演算子であるので，
+例えば
+`foo @@ bar foobar`
+は，
+`foo (bar foobar)`
+と全く同じ意味である．
+つまり，
+`ignore @@ Js.Opt.map event##.target @@ Dom.removeChild parent`
+は
+`ignore (Js.Opt.map event##.target (Dom.removeChild parent))`
+と全く同じ意味．
+単に括弧を書くのが面倒なので使っている．
+
+[Js.Opt.map: 'a t -> ('a -> 'b) -> 'b t](https://ocsigen.org/js_of_ocaml/latest/api/js_of_ocaml/Js_of_ocaml/Js/Opt/index.html#val-map)
+関数が `opt` に対して map する関数である．
+
+`ignore @@ Js.Opt.map event##.target @@ Dom.removeChild parent`
+をより分かりやすく書き直すと，以下のようになる．
+
+```ocaml
+let helper target =
+  Dom.removeChild parent target
+in
+let target_opt = event##.target in
+ignore (Js.Opt.map target_opt helper)
+```
 
 ## CSS
 

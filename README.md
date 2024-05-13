@@ -42,7 +42,13 @@ opam, dune, node が必要．
 
 ## dune を用いて初期セットアップをする．
 
-dune を用いて初期セットアップをする．
+dune を用いて初期セットアップをしよう．
+
+プロジェクトの名前を決めたら
+`dune init project <project name>`
+でプロジェクトを構築できる．
+DOM 操作を js_of_ocaml (jsoo) を用いて行うので，
+ここでは dom_jsoo という名前のプロジェクトを作ってみる．
 
 ```bash
 dune init project dom_jsoo .
